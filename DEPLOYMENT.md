@@ -1,0 +1,15 @@
+# Deploy CAPGAP
+
+1. Run `npm ci`, `npm run typecheck`, `npm run lint`, `npm test`, `npm run test:e2e`, and `npm run build` on a supported Node version. Commit source and lockfile, never `.env.local`.
+2. Create a Supabase project and apply the SQL migration. Verify RLS using disposable users before exposing accounts. Enable email authentication with your chosen production SMTP service. Set the site URL and explicit callback allowlist.
+3. Import the repository into Vercel using the Next.js preset. Install: `npm ci`; build: `npm run build`. Use Node 24 or a supported Node 22 release. This is a server-rendered app, not a static export.
+4. Configure the environment variables from `.env.example`. Browser-prefixed variables are embedded at build time, so rebuild after changing them. Keep service-role key, RPC URL credentials, Jupiter key, monitor secret and signing private key server-only. For production scanning, configure the Supabase service-role key for atomic shared rate limits, or explicitly opt into `ALLOW_MEMORY_RATE_LIMIT=true` for a single-instance private deployment.
+5. Generate an Ed25519 key in a trusted environment, provision the private PEM as a secret, and choose a stable unique key ID. Receipts register only its public key. Preserve old key registrations and use a new ID on rotation. Never reuse a key ID for a different key.
+6. Set `NEXT_PUBLIC_APP_URL` to the final HTTPS origin. Test a real token, exact-size quote, unavailable route behavior, magic-link callback, watchlist isolation, durable live receipt, public verification and image download in staging. No hosted authentication/cron/email delivery is certified by local tests.
+7. Enable `pg_cron`, `pg_net`, and Vault. Store `capgap_app_url` and `capgap_monitor_secret` in Vault; apply `supabase/monitoring.sql`. Monitor run rows for failures/backlog. The route processes three leases at a time; allow a server function duration of at least 60 seconds on a supported deployment plan. Provider failures can stretch processing; bound workload before scaling.
+8. Optional: configure Resend, verify `EMAIL_FROM`, opt in at settings, and create an email-enabled alert. Check recorded delivery status. Email retries/recovery notifications and an outbox are not implemented.
+9. Finalize operator identity/contact, privacy/terms, account deletion process, infrastructure abuse protection and dependency advisory disposition before public launch. This repository does not publish itself or create external accounts.
+
+Rollback: redeploy the previous app build while retaining immutable receipts and old verification keys. Schema changes should be additive; do not wipe public evidence during rollback. Keep signing-key backups in your secret-management system. Receipt content does not include private credentials.
+
+Provider quotas apply globally to credentials, while current provider scheduling is per process. High-traffic/multi-region use needs a global quota coordinator and a durable worker/outbox. Database ingestion failure is disclosed in the current analysis limitations; do not claim persistence when it fails.
