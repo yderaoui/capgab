@@ -44,6 +44,8 @@ Playwright starts/reuses port 3001; set `PLAYWRIGHT_BASE_URL` for an existing de
 
 Demo prices and quotes are fictional, with a deterministic reserve curve. Demo mode uses the production calculation and visualization code, but bypasses real providers and production persistence. Browser storage is named `capgap-demo-v1`. Server demo receipts use an ephemeral Ed25519 key and process memory. The browser retains a JSON copy; a demo receipt URL or image can expire after a server restart and is not durable public evidence. Export JSON to preserve a preview. Production database constraints reject demo observations and receipts.
 
+Demo image downloads send the browser's signed preview to the renderer, so they work across serverless instances even when an ephemeral server receipt has expired. The server verifies integrity and accepts this path only for explicitly labeled demo content. Shared demo receipt links still require persistent storage to be durable.
+
 The homepage slider is an explicitly labeled illustrative preview; real analysis never scales a previous quote.
 
 ## Configuration

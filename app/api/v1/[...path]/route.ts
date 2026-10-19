@@ -22,6 +22,7 @@ import { issueReceipt, verifyReceipt } from "@/lib/receipts";
 import { mintSchema } from "@/lib/solana";
 import { monitor } from "@/lib/monitor";
 export const runtime = "nodejs";
+export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 type Context = { params: Promise<{ path: string[] }> };
 async function handle(request: Request, context: Context) {

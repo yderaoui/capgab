@@ -66,6 +66,37 @@ export function ReceiptView({ id }: { id: string }) {
   });
   const r = ready && local ? local : query.data;
   const [verification, setVerification] = useState("Not yet checked");
+  const [imageBusy, setImageBusy] = useState(false);
+  const [imageError, setImageError] = useState("");
+  async function downloadImage() {
+    if (!r) return;
+    setImageBusy(true);
+    setImageError("");
+    try {
+      const response = await fetch(
+        `/receipt/${id}/image`,
+        r.content.mode === "demo"
+          ? {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(r),
+            }
+          : undefined,
+      );
+      if (!response.ok)
+        throw new Error("Receipt image could not be rendered. Please retry.");
+      const url = URL.createObjectURL(await response.blob());
+      const el = document.createElement("a");
+      el.href = url;
+      el.download = `capgap-${id}.png`;
+      el.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      setImageError((error as Error).message);
+    } finally {
+      setImageBusy(false);
+    }
+  }
   async function check() {
     if (!r) return;
     try {
@@ -171,17 +202,20 @@ export function ReceiptView({ id }: { id: string }) {
           <Download size={14} />
           Download JSON
         </Button>
-        <Button variant="outline" asChild>
-          <a href={`/receipt/${id}/image`} download={`capgap-${id}.png`}>
-            <Download size={14} />
-            Download image
-          </a>
+        <Button variant="outline" onClick={downloadImage} disabled={imageBusy}>
+          <Download size={14} />
+          {imageBusy ? "Rendering image…" : "Download image"}
         </Button>
         <Button onClick={check}>
           <ShieldCheck size={14} />
           Verify receipt
         </Button>
       </div>
+      {imageError && (
+        <p className="error-text" role="alert">
+          {imageError}
+        </p>
+      )}
       <div className="panel">
         <div className="panel-heading">
           <h2>Receipt integrity</h2>

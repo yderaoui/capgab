@@ -57,6 +57,18 @@ test("demo size, comparison, receipts, downloads and tampering", async ({
   ).toBeEnabled();
   await page.getByRole("button", { name: "Save token", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("saved");
+  // A cold serverless instance may not retain the ephemeral demo receipt.
+  await page.route("**/api/v1/receipts/*", (route) =>
+    route.fulfill({
+      status: 404,
+      contentType: "application/json",
+      body: JSON.stringify({
+        error: {
+          message: "Ephemeral preview is not available in this instance.",
+        },
+      }),
+    }),
+  );
   await page.getByRole("button", { name: "Generate demo receipt" }).click();
   await expect(page).toHaveURL(/\/receipt\//);
   await page
@@ -69,11 +81,10 @@ test("demo size, comparison, receipts, downloads and tampering", async ({
   expect(download.suggestedFilename()).toMatch(/\.json$/);
   const jsonPath = await download.path();
   expect(jsonPath).not.toBeNull();
-  expect(JSON.parse(await readFile(jsonPath!, "utf8")).algorithm).toBe(
-    "Ed25519",
-  );
+  const receipt = JSON.parse(await readFile(jsonPath!, "utf8"));
+  expect(receipt.algorithm).toBe("Ed25519");
   const imagePromise = page.waitForEvent("download");
-  await page.getByRole("link", { name: "Download image" }).click();
+  await page.getByRole("button", { name: "Download image" }).click();
   const imageDownload = await imagePromise;
   expect(imageDownload.suggestedFilename()).toMatch(/\.png$/);
   expect(await imageDownload.failure()).toBeNull();
@@ -82,11 +93,12 @@ test("demo size, comparison, receipts, downloads and tampering", async ({
   expect(png.subarray(1, 4).toString()).toBe("PNG");
   expect(png.readUInt32BE(16)).toBe(1200);
   expect(png.readUInt32BE(20)).toBe(630);
-  const receiptId = page.url().split("/").pop();
-  const receipt = await (
-    await page.request.get(`/api/v1/receipts/${receiptId}`)
-  ).json();
   receipt.content.analysis.values.exitValue = "999999";
+  const rejected = await page.request.post(
+    `/receipt/${receipt.content.id}/image`,
+    { data: receipt },
+  );
+  expect(rejected.status()).toBe(400);
   await page
     .getByLabel("Verify a downloaded receipt JSON (detects tampering locally)")
     .setInputFiles({

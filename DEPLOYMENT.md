@@ -13,3 +13,5 @@
 Rollback: redeploy the previous app build while retaining immutable receipts and old verification keys. Schema changes should be additive; do not wipe public evidence during rollback. Keep signing-key backups in your secret-management system. Receipt content does not include private credentials.
 
 Provider quotas apply globally to credentials, while current provider scheduling is per process. High-traffic/multi-region use needs a global quota coordinator and a durable worker/outbox. Database ingestion failure is disclosed in the current analysis limitations; do not claim persistence when it fails.
+
+For a limited client demonstration without Supabase, `ALLOW_MEMORY_RATE_LIMIT=true` enables best-effort per-instance limits and public-provider scans. Serverless instances do not share these buckets; configure Supabase shared limits before a broad public launch. Account sign-in and background monitoring stay unconfigured. Demo receipts remain browser-local, and their signed image-export path works independently of server instance memory.
